@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AnnaMoneyTest</string>
+    <string name="input_amount">Введите сумму</string>
+    <string name="lottie">Lottie</string>
+</resources>

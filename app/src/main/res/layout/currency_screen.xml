@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <android.support.v7.widget.RecyclerView
+            android:id="@+id/source_currencies"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:layoutManager="android.support.v7.widget.LinearLayoutManager"
+            tools:orientation="horizontal"
+            app:layout_constraintBottom_toTopOf="@+id/source_amount"
+            app:layout_constraintVertical_bias="0.0" app:layout_constraintVertical_chainStyle="spread"/>
+
+    <EditText
+            android:id="@+id/source_amount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:imeOptions="flagNoExtractUi"
+            android:hint="@string/input_amount"
+            android:digits="0123456789,."
+            android:textSize="24sp"
+            android:inputType="numberDecimal"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/source_currencies" app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintBottom_toTopOf="@+id/dest_amount"/>
+
+    <TextView
+            android:id="@+id/dest_amount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:textSize="24sp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintBottom_toTopOf="@+id/dest_currencies"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="14.14" android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/source_amount"
+            app:layout_constraintVertical_bias="1.0" app:layout_constraintHorizontal_bias="0.5"/>
+
+    <android.support.v7.widget.RecyclerView
+            android:id="@+id/dest_currencies"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:clipToPadding="false"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            app:layout_constraintBottom_toTopOf="@+id/next_stage"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:layoutManager="android.support.v7.widget.LinearLayoutManager"
+            tools:orientation="horizontal" app:layout_constraintTop_toBottomOf="@+id/dest_amount"
+    />
+
+    <Button
+            android:id="@+id/next_stage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:text="@string/lottie"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/dest_currencies"
+            app:layout_constraintHorizontal_bias="0.5"/>
+</android.support.constraint.ConstraintLayout>
