@@ -8,7 +8,7 @@
         android:id="@+id/currencies"
         android:name="davydov.annamoney.ui.currency.fragment.CurrencyFragment">
         <action
-            android:id="@+id/currencies_to_lotty"
+            android:id="@+id/currencies_to_lottie"
             app:destination="@id/lottie"
             app:enterAnim="@anim/nav_default_enter_anim"
             app:exitAnim="@anim/nav_default_exit_anim"

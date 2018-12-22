@@ -21,7 +21,7 @@ class CurrencyRatesRepositoryImpl(
                     it.onSuccess(currencyWithRateParser.getCurrenciesWithRates(call.execute().body()!!.charStream()).apply {
                         add(0, CurrencyWithRate(defaultCurrencyName, 1.0))
                     })
-                } catch (ex: Exception) {
+                } catch (ex: Throwable) {
                     it.onError(ex)
                 }
             }

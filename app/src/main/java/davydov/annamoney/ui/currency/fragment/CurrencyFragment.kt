@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.text.method.DigitsKeyListener
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,10 +27,10 @@ import java.math.RoundingMode
 class CurrencyFragment : MvpAppCompatFragment(), CurrencyView {
 
     private val sourceAdapter = CurrencyAdapter {
-        currencyPresenter.setSourceCurrency(it)
+        currencyPresenter.sourceCurrency = it
     }
     private val destAdapter = CurrencyAdapter {
-        currencyPresenter.setDestinationCurrency(it)
+        currencyPresenter.destCurrency = it
     }
     private lateinit var sourceAmount: EditText
     private lateinit var destAmount: TextView
@@ -57,7 +55,7 @@ class CurrencyFragment : MvpAppCompatFragment(), CurrencyView {
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable) {
                     val value = s.toString().toDoubleOrNull() ?: 0.0
-                    currencyPresenter.setAmount(BigDecimal(value).setScale(2, RoundingMode.HALF_UP))
+                    currencyPresenter.amount = BigDecimal(value).setScale(2, RoundingMode.HALF_UP)
                 }
 
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {

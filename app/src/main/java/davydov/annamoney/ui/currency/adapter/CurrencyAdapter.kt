@@ -9,31 +9,35 @@ import android.widget.TextView
 import davydov.annamoney.R
 import kotlin.properties.Delegates
 
-class CurrencyAdapter(val clickListener: (String) -> Unit) : RecyclerView.Adapter<CurrencyViewHolder>() {
-    var currencies by Delegates.observable(emptyList<String>()) { property, oldValue, newValue ->
-        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-            override fun areItemsTheSame(old: Int, new: Int) = oldValue[old] == newValue[new]
+class CurrencyAdapter(private val clickListener: (String) -> Unit) : RecyclerView.Adapter<CurrencyViewHolder>() {
+    var currencies by Delegates.observable(emptyList<String>()) { _, oldValue, newValue ->
+        if (oldValue != newValue) {
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun areItemsTheSame(old: Int, new: Int) = oldValue[old] == newValue[new]
 
-            override fun getOldListSize() = oldValue.size
+                override fun getOldListSize() = oldValue.size
 
-            override fun getNewListSize() = newValue.size
+                override fun getNewListSize() = newValue.size
 
-            override fun areContentsTheSame(p0: Int, p1: Int) =
-                true // если изменится выбор - presenter назначит другой выбор
+                override fun areContentsTheSame(p0: Int, p1: Int) =
+                    true // если изменится выбор - presenter назначит другой выбор
 
-        }).dispatchUpdatesTo(this)
+            }).dispatchUpdatesTo(this)
+        }
     }
-    var selection by Delegates.observable<String?>(null) { property, oldValue, newValue ->
-        DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-            override fun getOldListSize() = currencies.size
+    var selection by Delegates.observable<String?>(null) { _, oldValue, newValue ->
+        if (oldValue != newValue) {
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize() = currencies.size
 
-            override fun getNewListSize() = currencies.size
+                override fun getNewListSize() = currencies.size
 
-            override fun areContentsTheSame(p0: Int, p1: Int) =
-                currencies[p0].let { it != oldValue && it != newValue }
+                override fun areContentsTheSame(p0: Int, p1: Int) =
+                    currencies[p0].let { it != oldValue && it != newValue }
 
-            override fun areItemsTheSame(p0: Int, p1: Int) = p0 == p1 //список элементов не меняется
-        }, false).dispatchUpdatesTo(this)
+                override fun areItemsTheSame(p0: Int, p1: Int) = p0 == p1 //список элементов не меняется
+            }, false).dispatchUpdatesTo(this)
+        }
     }
 
     override fun onCreateViewHolder(p0: ViewGroup, p1: Int) =
@@ -49,7 +53,7 @@ class CurrencyAdapter(val clickListener: (String) -> Unit) : RecyclerView.Adapte
 }
 
 class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    val textView = itemView as TextView
+    private val textView = itemView as TextView
     fun bindViewHolder(currency: String, selected: Boolean, listener: (String) -> Unit) {
         textView.text = currency
         textView.setBackgroundResource(if (selected) R.drawable.selected_rectangle else R.drawable.unselected_rectangle)

@@ -1,84 +1,78 @@
 package davydov.annamoney.presentation.presenter
 
 import androidx.navigation.NavController
-import davydov.annamoney.application.App
-import davydov.annamoney.model.CurrencyWithRate
-import davydov.annamoney.presentation.view.CurrencyView
-import davydov.annamoney.repository.interfaces.CurrencyRatesRepository
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
 import davydov.annamoney.R
+import davydov.annamoney.application.App
+import davydov.annamoney.presentation.view.CurrencyView
+import davydov.annamoney.repository.interfaces.CurrencyRatesRepository
 import davydov.annamoney.ui.lottie.LottieFragment
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Function4
 import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
-import davydov.annamoney.util.Optional
-import davydov.annamoney.util.optional
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 @InjectViewState
 class CurrencyPresenter : MvpPresenter<CurrencyView>() {
 
-    init {
-        App.appComponent.inject(this)
-    }
-
     @Inject
     lateinit var currencyRatesRepository: CurrencyRatesRepository
 
-    private val sourceCurrencySubject =
-        BehaviorSubject.createDefault<String>(currencyRatesRepository.defaultCurrencyName)
-    private val destCurrencySubject =
-        BehaviorSubject.createDefault<String>(currencyRatesRepository.defaultCurrencyName)
-    private val amountSubject = BehaviorSubject.createDefault<Optional<BigDecimal>>(Optional.empty())
-    private lateinit var disposable: CompositeDisposable
+    var sourceCurrency : String by Delegates.observable("") {_, old, new ->
+        if (new != old) {
+            viewState.setSourceCurrency(new)
+            recalcSum(rates, sourceCurrency, destCurrency, amount)
+        }
+    }
+
+    var destCurrency : String by Delegates.observable("") {_, old, new ->
+        if (new != old) {
+            viewState.setDestinationCurrency(new)
+            recalcSum(rates, sourceCurrency, destCurrency, amount)
+        }
+    }
+    var amount : BigDecimal? by Delegates.observable<BigDecimal?>(null) { _, old, new ->
+        if (new != old) {
+            new?.let {viewState.setSourceAmount(it)}
+            recalcSum(rates, sourceCurrency, destCurrency, amount)
+        }
+    }
+    private var rates: Map<String, Double> = emptyMap()
+    private lateinit var disposable: Disposable
+
+    init {
+        App.appComponent.inject(this)
+        //инициализирую переменные здесь, чтобы сработал делегат
+        sourceCurrency = currencyRatesRepository.defaultCurrencyName
+        destCurrency = currencyRatesRepository.defaultCurrencyName
+    }
+
+
 
 
     fun screenShown() {
-        disposable = CompositeDisposable()
-        sourceCurrencySubject.distinctUntilChanged().subscribe { viewState.setSourceCurrency(it) }.beforeStop()
-        destCurrencySubject.distinctUntilChanged().subscribe { viewState.setDestinationCurrency(it) }.beforeStop()
-        amountSubject.distinctUntilChanged().subscribe {
-            it.value?.let { viewState.setSourceAmount(it) }
-        }.beforeStop()
-        val refreshRatesObservable = Observable.interval(0, 30, TimeUnit.SECONDS, Schedulers.io())
+        disposable = Observable.interval(0, 30, TimeUnit.SECONDS, Schedulers.io())
             .flatMapMaybe {
                 currencyRatesRepository.currenciesRatesSingle
                     .toMaybe()
-                    .filter { it.isNotEmpty() }
+                    .filter {rates -> rates.isNotEmpty() }
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnError { } //we can show error there
                     .doOnSuccess { } //we can hide error there
                     .onErrorComplete()
-            }.distinctUntilChanged()
-        Observable.combineLatest(
-            refreshRatesObservable,
-            sourceCurrencySubject.distinctUntilChanged(),
-            destCurrencySubject.distinctUntilChanged(),
-            amountSubject.distinctUntilChanged(),
-            Function4<List<CurrencyWithRate>, String, String, Optional<BigDecimal>, Optional<BigDecimal>> { rates, source, dest, amount ->
-                checkCurrencies(rates.map { it.currency }, source, dest)
-                val ratesMap = rates.associate { it.currency to it.rate }
-                val sourceRate = ratesMap[source]?.let { BigDecimal(it) }
-                val destRate = ratesMap[dest]?.let { BigDecimal(it) }
-                if (sourceRate == null || destRate == null) {
-                    Optional.empty() //список валют изменился. checkCurrencies заэмитит другую выбранную валюту
-                } else {
-                    val current = amount.value ?: BigDecimal.ZERO
-                    (current * sourceRate / destRate).setScale(2, RoundingMode.HALF_UP)
-                        .optional()
-                }
-
-            })
-            .subscribe { it.value?.let { viewState.setDestinationAmount(it) } }
-            .beforeStop()
+            }
+            .distinctUntilChanged()
+            .subscribe{ratesList ->
+                rates = ratesList.associateTo(HashMap()) { it.currency to it.rate }
+                checkCurrencies(ratesList.map { it.currency }, sourceCurrency, destCurrency)
+                recalcSum(rates, sourceCurrency, destCurrency, amount)
+            }
     }
 
     private fun checkCurrencies(currencies: List<String>, source: String, dest: String) {
@@ -86,23 +80,24 @@ class CurrencyPresenter : MvpPresenter<CurrencyView>() {
         viewState.setSourceCurrencies(currencies)
         viewState.setDestCurrencies(currencies)
         if (!currencies.contains(source)) {
-            setSourceCurrency(defaultCurrency)
+            sourceCurrency = defaultCurrency
         }
         if (!currencies.contains(dest)) {
-            setDestinationCurrency(defaultCurrency)
+            destCurrency = defaultCurrency
         }
     }
 
-    fun setSourceCurrency(currency: String) {
-        sourceCurrencySubject.onNext(currency)
-    }
-
-    fun setDestinationCurrency(currency: String) {
-        destCurrencySubject.onNext(currency)
-    }
-
-    fun setAmount(amount: BigDecimal) {
-        amountSubject.onNext(amount.optional())
+    private fun recalcSum(rates: Map<String, Double>,
+                          sourceCurrency : String,
+                          destCurrency: String,
+                          amount: BigDecimal?){
+        val sourceRate = rates[sourceCurrency]?.let { BigDecimal(it) }
+        val destRate = rates[destCurrency]?.let { BigDecimal(it) }
+        if (sourceRate != null && destRate != null) {
+            val current = amount ?: BigDecimal.ZERO
+            val newSum = (current * destRate / sourceRate).setScale(2, RoundingMode.HALF_UP)
+            viewState.setDestinationAmount(newSum)
+        }
     }
 
     fun screenHided() {
@@ -110,17 +105,12 @@ class CurrencyPresenter : MvpPresenter<CurrencyView>() {
     }
 
     fun toLottieScreen(navController: NavController) {
-        LottieFragment.navigateTo(navController, R.id.currencies_to_lotty)
+        LottieFragment.navigateTo(navController, R.id.currencies_to_lottie)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         disposable.dispose()
-    }
-
-    private fun Disposable.beforeStop(): Disposable {
-        disposable.add(this)
-        return this
     }
 
 }
