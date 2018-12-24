@@ -6,12 +6,9 @@ import org.xmlpull.v1.XmlPullParser
 import java.io.Reader
 
 class CurrencyWithRateParser {
-    private val parser by lazy {
-        Xml.newPullParser()
-    }
-
 
     fun getCurrenciesWithRates(reader: Reader): ArrayList<CurrencyWithRate> {
+        val parser = Xml.newPullParser()
         parser.setInput(reader)
         val result = ArrayList<CurrencyWithRate>()
         while (parser.eventType != XmlPullParser.END_DOCUMENT) {
